@@ -1,0 +1,4 @@
+flask
+tensorflow-cpu        ← use CPU version, much smaller than tensorflow
+numpy
+pillow

@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FreshPeek — Fruit Freshness Detector</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        :root {
+            --soft-orange: #e8956d;
+            --warm-tan:    #d4956a;
+            --muted-red:   #d4796a;
+            --sage:        #b5c4a1;
+            --text-dark:   #5a3e2b;
+            --text-mid:    #8a6a52;
+            --text-light:  #b09070;
+            --card-bg:     rgba(253,246,238,0.93);
+            --border-soft: rgba(212,149,106,0.26);
+            --nav-bg:      rgba(253,246,238,0.84);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+        html, body { height:100%; }
+
+        body {
+            font-family:'Poppins',sans-serif;
+            min-height:100vh;
+            display:flex;
+            flex-direction:column;
+            background:#f2e4d5;
+            overflow-x:hidden;
+            overflow-y:auto;
+        }
+
+        /* background */
+        .bg-scene {
+            position:fixed; inset:0; z-index:0;
+            background:
+                radial-gradient(ellipse at 18% 28%, rgba(245,201,160,0.52) 0%, transparent 52%),
+                radial-gradient(ellipse at 82% 72%, rgba(232,180,160,0.42) 0%, transparent 52%),
+                radial-gradient(ellipse at 55% 8%,  rgba(240,217,154,0.36) 0%, transparent 48%),
+                radial-gradient(ellipse at 8%  82%, rgba(181,196,161,0.30) 0%, transparent 44%),
+                linear-gradient(155deg,#f9ede0 0%,#f2e1ce 45%,#ecd9c4 100%);
+        }
+
+        /* fruit layer — emoji based */
+        .fruit-layer {
+            position:fixed; inset:0; z-index:2;
+            pointer-events:none; overflow:hidden;
+        }
+        .fb {
+            position:absolute;
+            pointer-events:none;
+            will-change:left,top,transform;
+            line-height:1;
+            user-select:none;
+        }
+
+        /* NAVBAR */
+        nav {
+            position:relative; z-index:50;
+            background:var(--nav-bg);
+            backdrop-filter:blur(16px) saturate(1.3);
+            -webkit-backdrop-filter:blur(16px) saturate(1.3);
+            border-bottom:1px solid rgba(212,149,106,0.16);
+            height:56px;
+            display:flex; align-items:center;
+            padding:0 32px;
+            justify-content:space-between;
+            flex-shrink:0;
+        }
+
+        .nav-brand { display:flex; align-items:center; gap:9px; text-decoration:none; }
+
+        .nav-brand-icon {
+            width:32px; height:32px; border-radius:9px;
+            background:linear-gradient(135deg,#e8956d,#d4796a);
+            display:flex; align-items:center; justify-content:center;
+            box-shadow:0 3px 9px rgba(212,121,106,0.28);
+            position:relative;
+        }
+        .nav-brand-icon .icon-leaf  { font-size:13px; color:#fff; }
+        .nav-brand-icon .icon-spark {
+            position:absolute; top:-4px; right:-5px;
+            font-size:9px; color:#fde68a;
+            filter:drop-shadow(0 0 4px rgba(253,230,138,0.9));
+            animation:sparkPulse 2s ease-in-out infinite;
+        }
+        @keyframes sparkPulse {
+            0%,100% { opacity:1;  transform:scale(1);    }
+            50%     { opacity:.6; transform:scale(0.82); }
+        }
+
+        .nav-brand-name { font-size:15px; font-weight:700; color:var(--text-dark); }
+        .nav-brand-name span { color:var(--soft-orange); }
+
+        .nav-scope-tag {
+            display:flex; align-items:center; gap:6px;
+            background:rgba(212,149,106,0.10);
+            border:1px solid rgba(212,149,106,0.22);
+            border-radius:20px;
+            padding:5px 12px;
+            font-size:11.5px; color:var(--text-mid); font-weight:400;
+        }
+        .nav-scope-tag i { font-size:10px; color:var(--warm-tan); }
+
+        /* MAIN */
+        main {
+            flex:1;
+            display:flex; align-items:center; justify-content:center;
+            position:relative; z-index:10;
+            padding:18px 20px;
+        }
+
+        /* CARD */
+        .container {
+            background:var(--card-bg);
+            backdrop-filter:blur(22px) saturate(1.2);
+            -webkit-backdrop-filter:blur(22px) saturate(1.2);
+            border-radius:24px;
+            padding:28px 38px 26px;
+            width:100%; max-width:520px;
+            box-shadow:
+                0 2px 0 rgba(255,255,255,.72) inset,
+                0 24px 60px rgba(130,80,40,.11),
+                0 6px 18px rgba(130,80,40,.07);
+            border:1.5px solid rgba(255,255,255,.64);
+            text-align:center;
+        }
+
+        .card-icon-wrap {
+            width:48px; height:48px; border-radius:14px;
+            background:linear-gradient(135deg,rgba(232,149,109,.14),rgba(212,121,106,.09));
+            border:1.5px solid rgba(232,149,109,.22);
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 10px; position:relative;
+        }
+        .card-icon-wrap .icon-leaf  { font-size:22px; color:var(--soft-orange); }
+        .card-icon-wrap .icon-spark {
+            position:absolute; top:-5px; right:-6px;
+            font-size:11px; color:#f59e0b;
+            filter:drop-shadow(0 0 5px rgba(245,158,11,0.7));
+            animation:sparkPulse 2s ease-in-out infinite;
+        }
+
+        h1 { color:var(--text-dark); font-size:22px; font-weight:700; letter-spacing:-.3px; margin-bottom:4px; }
+
+        .subtitle {
+            color:var(--text-light); font-size:12px; font-weight:300;
+            margin-bottom:10px; line-height:1.5;
+        }
+
+        .scope-notice {
+            display:inline-flex; align-items:center; gap:7px;
+            background:rgba(212,149,106,0.10);
+            border:1px solid rgba(212,149,106,0.22);
+            border-radius:20px;
+            padding:5px 14px; font-size:11.5px; color:var(--text-mid); font-weight:400;
+            margin-bottom:16px;
+        }
+        .scope-notice i { font-size:10px; color:var(--warm-tan); }
+        .scope-notice strong { font-weight:600; color:var(--text-dark); }
+
+        .tip-box {
+            background:rgba(240,217,154,.15);
+            border:1.5px solid rgba(212,170,80,.24);
+            border-radius:12px; padding:10px 14px; margin-bottom:14px;
+            text-align:left; display:flex; gap:10px; align-items:flex-start;
+        }
+        .tip-icon-wrap {
+            width:26px; height:26px; border-radius:7px;
+            background:rgba(212,170,80,.15);
+            display:flex; align-items:center; justify-content:center; flex-shrink:0;
+        }
+        .tip-icon-wrap i { font-size:11px; color:#a07830; }
+        .tip-label { font-size:9.5px; font-weight:600; color:#a07830; text-transform:uppercase; letter-spacing:.8px; margin-bottom:2px; }
+        .tip-text  { font-size:11px; color:var(--text-mid); font-weight:300; line-height:1.5; }
+
+        .divider {
+            height:1px;
+            background:linear-gradient(90deg,transparent,var(--border-soft),transparent);
+            margin:0 0 14px;
+        }
+
+        /* UPLOAD */
+        .upload-area {
+            border:2px dashed rgba(212,149,106,.40);
+            border-radius:16px; padding:20px; cursor:pointer;
+            transition:all .3s ease; margin-bottom:12px;
+            background:rgba(245,201,160,.07);
+            position:relative; overflow:hidden;
+            min-height:160px;
+            display:flex; flex-direction:column;
+            align-items:center; justify-content:center;
+        }
+        .upload-area::before {
+            content:''; position:absolute; inset:0;
+            background:radial-gradient(circle at 50% 60%,rgba(232,149,109,.07) 0%,transparent 70%);
+            transition:opacity .3s; opacity:0;
+        }
+        .upload-area:hover { border-color:rgba(212,149,106,.68); background:rgba(245,201,160,.13); transform:translateY(-2px); box-shadow:0 6px 18px rgba(212,149,106,.10); }
+        .upload-area:hover::before { opacity:1; }
+
+        .upload-placeholder { display:flex; flex-direction:column; align-items:center; gap:6px; }
+
+        .upload-icon-wrap {
+            width:44px; height:44px; border-radius:12px;
+            background:rgba(232,149,109,.11); border:1.5px solid rgba(232,149,109,.2);
+            display:flex; align-items:center; justify-content:center; transition:transform .3s;
+        }
+        .upload-area:hover .upload-icon-wrap { transform:scale(1.08) rotate(-3deg); }
+        .upload-icon-wrap i { font-size:19px; color:var(--soft-orange); }
+
+        .upload-label-main { color:var(--text-mid); font-size:13px; font-weight:500; }
+        .upload-label-sub  { color:var(--text-light); font-size:11px; font-weight:300; }
+
+        #preview {
+            display:none; width:100%; max-height:200px;
+            object-fit:contain; border-radius:10px;
+            position:relative; z-index:1;
+            box-shadow:0 4px 14px rgba(130,80,40,.12);
+        }
+
+        input[type="file"] { display:none; }
+
+        .btn-check {
+            background:linear-gradient(135deg,#e8956d,#d4796a);
+            color:#fff; border:none; padding:12px 32px; border-radius:13px;
+            font-size:13.5px; font-weight:600; font-family:'Poppins',sans-serif;
+            cursor:pointer; width:100%; letter-spacing:.2px;
+            transition:all .3s ease; box-shadow:0 4px 14px rgba(212,121,106,.30);
+            display:flex; align-items:center; justify-content:center; gap:8px;
+        }
+        .btn-check i { font-size:13px; }
+        .btn-check:hover { transform:translateY(-2px); box-shadow:0 7px 20px rgba(212,121,106,.40); }
+        .btn-check:active { transform:translateY(0); }
+
+        .loading {
+            display:none; color:var(--text-mid); margin-top:12px;
+            font-size:12.5px; font-weight:400;
+            align-items:center; justify-content:center; gap:9px;
+        }
+        .loading.show { display:flex; }
+        .dot-pulse { display:flex; gap:4px; align-items:center; }
+        .dot-pulse span {
+            width:5px; height:5px; border-radius:50%; background:var(--soft-orange);
+            animation:dotB 1.2s ease-in-out infinite;
+        }
+        .dot-pulse span:nth-child(2) { animation-delay:.2s; }
+        .dot-pulse span:nth-child(3) { animation-delay:.4s; }
+        @keyframes dotB { 0%,80%,100%{transform:scale(.7);opacity:.5} 40%{transform:scale(1);opacity:1} }
+
+        .result {
+            margin-top:12px; padding:14px 16px; border-radius:14px;
+            display:none; text-align:left;
+            animation:slideUp .38s cubic-bezier(.34,1.56,.64,1);
+        }
+        @keyframes slideUp { from{transform:translateY(10px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+        .result.fresh   { background:linear-gradient(135deg,rgba(181,196,161,.17),rgba(181,196,161,.05)); border:1.5px solid rgba(181,196,161,.52); }
+        .result.rotten  { background:linear-gradient(135deg,rgba(212,121,106,.12),rgba(212,121,106,.04)); border:1.5px solid rgba(212,121,106,.40); }
+        .result.invalid { background:linear-gradient(135deg,rgba(240,217,154,.18),rgba(240,217,154,.06)); border:1.5px solid rgba(212,170,80,.36); }
+
+        .result-header { display:flex; align-items:center; gap:9px; margin-bottom:8px; }
+        .result-icon-wrap {
+            width:34px; height:34px; border-radius:9px;
+            display:flex; align-items:center; justify-content:center; flex-shrink:0;
+        }
+        .result.fresh   .result-icon-wrap { background:rgba(181,196,161,.28); }
+        .result.rotten  .result-icon-wrap { background:rgba(212,121,106,.17); }
+        .result.invalid .result-icon-wrap { background:rgba(240,217,154,.28); }
+        .result-icon-wrap i { font-size:15px; }
+        .result.fresh   .result-icon-wrap i { color:#5a7a48; }
+        .result.rotten  .result-icon-wrap i { color:#a04040; }
+        .result.invalid .result-icon-wrap i { color:#a07030; }
+
+        .result h2 { font-size:15px; font-weight:700; margin:0; }
+        .result.fresh   h2 { color:#5a7a48; }
+        .result.rotten  h2 { color:#a04040; }
+        .result.invalid h2 { color:#a07030; }
+
+        .result-details { display:flex; flex-direction:column; gap:4px; }
+        .result-pill {
+            display:inline-flex; align-items:center; gap:6px;
+            padding:4px 11px; border-radius:20px; font-size:11.5px; width:fit-content;
+        }
+        .result-pill i { font-size:10px; }
+        .result.fresh   .result-pill { background:rgba(181,196,161,.22); color:#4a6a38; }
+        .result.rotten  .result-pill { background:rgba(212,121,106,.14); color:#904040; }
+        .result.invalid .result-pill { background:rgba(240,217,154,.28); color:#906020; }
+
+        /* FOOTER */
+        footer {
+            position:relative; z-index:10;
+            background:rgba(253,246,238,.78);
+            backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+            border-top:1px solid rgba(212,149,106,.14);
+            padding:14px 32px; flex-shrink:0;
+        }
+        .footer-inner {
+            max-width:900px; margin:0 auto;
+            display:flex; align-items:center; justify-content:space-between; gap:12px;
+        }
+        .footer-brand { display:flex; align-items:center; gap:7px; }
+        .footer-brand i { font-size:13px; color:var(--soft-orange); }
+        .footer-brand-text { font-size:12.5px; font-weight:600; color:var(--text-dark); }
+        .footer-tagline { font-size:11px; color:var(--text-light); font-weight:300; }
+        .footer-copy { font-size:11px; color:var(--text-light); font-weight:300; }
+    </style>
+</head>
+<body>
+
+    <div class="bg-scene"></div>
+    <div class="fruit-layer" id="fruitLayer"></div>
+
+    <!-- NAVBAR -->
+    <nav>
+        <a class="nav-brand" href="#">
+            <div class="nav-brand-icon">
+                <i class="fa-solid fa-leaf icon-leaf"></i>
+                <i class="fa-solid fa-sparkles icon-spark"></i>
+            </div>
+            <span class="nav-brand-name">Fresh<span>Peek</span></span>
+        </a>
+        <div class="nav-scope-tag">
+            <i class="fa-solid fa-apple-whole"></i>
+            <span>Apples &middot; Bananas &middot; Oranges</span>
+        </div>
+    </nav>
+
+    <!-- MAIN -->
+    <main>
+        <div class="container">
+
+            <div class="card-icon-wrap">
+                <i class="fa-solid fa-leaf icon-leaf"></i>
+                <i class="fa-solid fa-sparkles icon-spark"></i>
+            </div>
+            <h1>Fruit Freshness Detector</h1>
+            <p class="subtitle">Upload a photo and we'll tell you whether your fruit is fresh or past its prime.</p>
+
+            <div class="scope-notice">
+                <i class="fa-solid fa-circle-info"></i>
+                Supports <strong>Apples</strong>, <strong>Bananas</strong>, and <strong>Oranges</strong> only
+            </div>
+
+            <div class="tip-box">
+                <div class="tip-icon-wrap"><i class="fa-solid fa-lightbulb"></i></div>
+                <div>
+                    <div class="tip-label">Pro Tip</div>
+                    <div class="tip-text">Use a clear, well-lit photo with the fruit filling the frame. Natural daylight works best — the model reads color and texture to judge freshness.</div>
+                </div>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                <div class="upload-placeholder" id="uploadPlaceholder">
+                    <div class="upload-icon-wrap"><i class="fa-solid fa-cloud-arrow-up"></i></div>
+                    <p class="upload-label-main">Click to upload a fruit image</p>
+                    <p class="upload-label-sub">PNG, JPG or WEBP &middot; max 10MB</p>
+                </div>
+                <img id="preview" src="" alt="Preview">
+            </div>
+
+            <input type="file" id="fileInput" accept="image/*" onchange="previewImage(event)">
+
+            <button class="btn-check" onclick="predict()">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Check Freshness
+            </button>
+
+            <div class="loading" id="loading">
+                <div class="dot-pulse"><span></span><span></span><span></span></div>
+                Analysing your fruit&hellip;
+            </div>
+
+            <div class="result" id="result">
+                <div class="result-header">
+                    <div class="result-icon-wrap"><i id="result-icon" class="fa-solid fa-circle-check"></i></div>
+                    <h2 id="result-title"></h2>
+                </div>
+                <div class="result-details">
+                    <div class="result-pill"><i class="fa-solid fa-seedling"></i><span id="result-fruit"></span></div>
+                    <div class="result-pill"><i class="fa-solid fa-chart-simple"></i><span id="result-confidence"></span></div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-inner">
+            <div>
+                <div class="footer-brand">
+                    <i class="fa-solid fa-leaf"></i>
+                    <span class="footer-brand-text">FreshPeek</span>
+                </div>
+                <div class="footer-tagline">Instant freshness detection for your fruit.</div>
+            </div>
+            <div class="footer-copy">&copy; 2026 FreshPeek. All rights reserved.</div>
+        </div>
+    </footer>
+
+    <script>
+    /* ═══════════════════════════════════════════
+       FLOATING FRUITS — emoji only (apple, banana, orange)
+       Soft bounce, gentle spin, wall-reflect
+    ═══════════════════════════════════════════ */
+    const EMOJIS = [
+        '🍎','🍎','🍎','🍎',   /* apples  */
+        '🍌','🍌','🍌','🍌',   /* bananas */
+        '🍊','🍊','🍊','🍊',   /* oranges */
+    ];
+
+    const layer = document.getElementById('fruitLayer');
+    const balls = [];
+
+    EMOJIS.forEach((emoji, i) => {
+        const el = document.createElement('span');
+        el.className = 'fb';
+        el.textContent = emoji;
+
+        const size  = 46 + Math.random() * 38;       /* 46–84 px */
+        const speed = 0.26 + Math.random() * 0.46;   /* gentle drift */
+        const angle = Math.random() * Math.PI * 2;
+        const spin  = (Math.random() - 0.5) * 0.15;  /* lazy spin */
+
+        const x = Math.random() * (window.innerWidth  - size);
+        const y = Math.random() * (window.innerHeight - size);
+
+        Object.assign(el.style, {
+            fontSize:   size + 'px',
+            opacity:    '0',
+            transition: 'opacity 1.4s',
+            left:       x + 'px',
+            top:        y + 'px',
+        });
+
+        const targetOpacity = (0.20 + Math.random() * 0.14).toFixed(2);
+
+        balls.push({ el, x, y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            rot: Math.random() * 360,
+            spin, size, targetOpacity
+        });
+
+        layer.appendChild(el);
+        setTimeout(() => { el.style.opacity = targetOpacity; }, 150 + i * 110);
+    });
+
+    (function tick() {
+        const W = window.innerWidth;
+        const H = window.innerHeight;
+        for (const b of balls) {
+            b.x   += b.vx;
+            b.y   += b.vy;
+            b.rot += b.spin;
+            if (b.x <= 0)          { b.x = 0;          b.vx =  Math.abs(b.vx); }
+            if (b.x + b.size >= W) { b.x = W - b.size; b.vx = -Math.abs(b.vx); }
+            if (b.y <= 0)          { b.y = 0;          b.vy =  Math.abs(b.vy); }
+            if (b.y + b.size >= H) { b.y = H - b.size; b.vy = -Math.abs(b.vy); }
+            b.el.style.left      = b.x + 'px';
+            b.el.style.top       = b.y + 'px';
+            b.el.style.transform = `rotate(${b.rot}deg)`;
+        }
+        requestAnimationFrame(tick);
+    })();
+
+    /* ═══════════════════════════════
+       UPLOAD — centered full preview
+    ═══════════════════════════════ */
+    function previewImage(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const preview     = document.getElementById('preview');
+        const placeholder = document.getElementById('uploadPlaceholder');
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            preview.src = ev.target.result;
+            preview.style.display = 'block';
+            placeholder.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    /* ═══════════════════════════════
+       PREDICT — auto-scroll to result
+    ═══════════════════════════════ */
+    async function predict() {
+        const fi = document.getElementById('fileInput');
+        if (!fi.files[0]) { alert('Please upload an image first!'); return; }
+
+        const loadingEl = document.getElementById('loading');
+        const resultEl  = document.getElementById('result');
+
+        loadingEl.classList.add('show');
+        resultEl.style.display = 'none';
+
+        const fd = new FormData();
+        fd.append('file', fi.files[0]);
+
+        try {
+            const res  = await fetch('/predict', { method:'POST', body:fd });
+            const data = await res.json();
+
+            loadingEl.classList.remove('show');
+            resultEl.style.display = 'block';
+            resultEl.className = 'result ' + data.status;
+
+            const iMap = {
+                fresh:   'fa-circle-check',
+                rotten:  'fa-circle-xmark',
+                invalid: 'fa-triangle-exclamation'
+            };
+            document.getElementById('result-icon').className = `fa-solid ${iMap[data.status] || 'fa-circle-question'}`;
+
+            if (data.status === 'invalid') {
+                document.getElementById('result-title').textContent      = 'Not Recognised';
+                document.getElementById('result-fruit').textContent      = data.message || 'Unknown image';
+                document.getElementById('result-confidence').textContent = 'Only Apples, Bananas, and Oranges are supported';
+            } else {
+                document.getElementById('result-title').textContent      = (data.status === 'fresh' ? 'Fresh ' : 'Rotten ') + data.fruit;
+                document.getElementById('result-fruit').textContent      = 'Fruit detected: ' + data.fruit;
+                document.getElementById('result-confidence').textContent = 'Confidence: ' + data.confidence;
+            }
+
+            /* scroll result into view — no need to resize window */
+            setTimeout(() => {
+                resultEl.scrollIntoView({ behavior:'smooth', block:'nearest' });
+            }, 80);
+
+        } catch(err) {
+            loadingEl.classList.remove('show');
+            console.error(err);
+        }
+    }
+    </script>
+</body>
+</html>
