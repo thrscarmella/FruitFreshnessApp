@@ -25,10 +25,16 @@ with open(os.path.join(BASE_DIR, 'class_names.json'), 'r') as f:
 os.environ['KERAS_HOME'] = '/tmp/.keras'
 os.environ['TFHUB_CACHE_DIR'] = '/tmp/tfhub'
 
-gate_model = tf.keras.applications.MobileNetV2(
-    weights='imagenet',
-    include_top=True
-)
+gate_model = None
+
+def get_gate_model():
+    global gate_model
+    if gate_model is None:
+        gate_model = tf.keras.applications.MobileNetV2(
+            weights='imagenet',
+            include_top=True
+        )
+    return gate_model
 
 SUPPORTED_FRUITS = ['apple', 'banana', 'orange']
 
@@ -65,7 +71,7 @@ def check_gatekeeper(img_pil):
     )
     img_array = np.expand_dims(img_array, axis=0)
 
-    preds = gate_model.predict(img_array, verbose=0)
+    preds = get_gate_model().predict(img_array, verbose=0)
     decoded = tf.keras.applications.mobilenet_v2.decode_predictions(preds, top=10)[0]
 
     print("Gatekeeper top-10:", [(lbl, f"{sc:.3f}") for _, lbl, sc in decoded])
