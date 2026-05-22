@@ -1,4 +1,4 @@
 flask
-tensorflow-cpu        ← use CPU version, much smaller than tensorflow
+tensorflow-cpu
 numpy
 pillow
